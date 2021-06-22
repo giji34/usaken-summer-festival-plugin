@@ -48,11 +48,9 @@ class BoatRace implements Listener {
     }
     Location location = enteredPlayer.getLocation();
     if (!IsValidStartLocation(location)) {
-      System.out.println("is not valid location");
       return;
     }
     if (!(vehicle instanceof Boat)) {
-      System.out.println("vehicle is not a boat");
       return;
     }
     PlayerBoatRaceRun run = new PlayerBoatRaceRun(vehicleUUid, new TimedLocation(enteredPlayer));
@@ -158,18 +156,15 @@ class BoatRace implements Listener {
   private static boolean IsValidStartLocation(Location loc) {
     World world = loc.getWorld();
     if (world == null) {
-      System.out.println("world is null");
       return false;
     }
     if (world.getEnvironment() != World.Environment.NORMAL) {
-      System.out.println("is not overworld");
       return false;
     }
     double x = loc.getX();
     double y = loc.getY();
     double z = loc.getZ();
     if (y != 67 && y != 68) {
-      System.out.println("invalid y:" + loc.getY());
       return false;
     }
     if (z >= 49) {
