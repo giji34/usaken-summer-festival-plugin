@@ -10,7 +10,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.event.vehicle.VehicleExitEvent;
-import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
@@ -22,11 +22,13 @@ import java.util.logging.Logger;
 class BoatRace implements Listener {
   final HashMap<UUID, PlayerBoatRaceRun> boatRaceRuns = new HashMap<>();
   final Logger logger;
+  final ScoreboardVisibility scoreboardVisibility;
 
-  static final String scoreboardName = "boat_race";
+  public static final String scoreboardName = "boat_race";
 
-  BoatRace(Logger logger) {
-    this.logger = logger;
+  BoatRace(JavaPlugin owner) {
+    this.logger = owner.getLogger();
+    this.scoreboardVisibility = new ScoreboardVisibility(owner, scoreboardName);
   }
 
   @EventHandler
@@ -55,6 +57,7 @@ class BoatRace implements Listener {
     }
     PlayerBoatRaceRun run = new PlayerBoatRaceRun(vehicleUUid, new TimedLocation(enteredPlayer));
     boatRaceRuns.put(enteredPlayer.getUniqueId(), run);
+    scoreboardVisibility.makeVisible();
     enteredPlayer.sendMessage(ChatColor.GRAY + "You did Get. You can Set and Go at any time you like!");
   }
 
@@ -100,8 +103,8 @@ class BoatRace implements Listener {
           player.sendMessage(ChatColor.AQUA + "Congratulation! Your new record!");
           score.setScore(recordMillis);
         }
-        boatRace.setDisplaySlot(DisplaySlot.SIDEBAR);
         this.boatRaceRuns.remove(player.getUniqueId());
+        this.scoreboardVisibility.makeVisible();
         break;
     }
   }

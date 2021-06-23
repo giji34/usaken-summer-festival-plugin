@@ -7,7 +7,7 @@ public class Main extends JavaPlugin implements Listener {
   final BoatRace boatRace;
 
   public Main() {
-    this.boatRace = new BoatRace(getLogger());
+    this.boatRace = new BoatRace(this);
   }
 
   @Override
