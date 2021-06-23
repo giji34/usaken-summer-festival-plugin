@@ -4,14 +4,14 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Main extends JavaPlugin implements Listener {
-  final BoatRace boatRace;
+  private BoatRace boatRace;
 
   public Main() {
-    this.boatRace = new BoatRace(this);
   }
 
   @Override
   public void onEnable() {
+    this.boatRace = new BoatRace(this);
     getServer().getPluginManager().registerEvents(boatRace, this);
   }
 }
