@@ -58,7 +58,7 @@ class BoatRace implements Listener {
     PlayerBoatRaceRun run = new PlayerBoatRaceRun(vehicleUUid, new TimedLocation(enteredPlayer));
     boatRaceRuns.put(enteredPlayer.getUniqueId(), run);
     scoreboardVisibility.makeVisible();
-    enteredPlayer.sendMessage(ChatColor.GRAY + "You did Get. You can Set and Go at any time you like!");
+    enteredPlayer.sendMessage(ChatColor.GRAY + "Are you ready?. You can start at any time you like!");
   }
 
   @EventHandler
