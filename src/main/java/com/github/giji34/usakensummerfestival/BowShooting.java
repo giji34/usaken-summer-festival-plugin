@@ -61,6 +61,12 @@ public class BowShooting implements Listener {
     }
   }
 
+  void finishSession(Player player, PlayerShootingSession session) {
+    player.sendMessage("Shooting session finished!: Your score is " + session.currentScoresMessage());
+    session.killArrows(owner.getServer());
+    sessions.remove(player.getUniqueId());
+  }
+
   void cancelSession(Player player, PlayerShootingSession.CancelReason reason) {
     if (sessions.containsKey(player.getUniqueId())) {
       PlayerShootingSession session = sessions.get(player.getUniqueId());
@@ -115,9 +121,7 @@ public class BowShooting implements Listener {
         this.cancelSession(player, PlayerShootingSession.CancelReason.HIT_ONE_TARGET_MULTIPLE_TIMES);
         return;
       case SESSION_FINISHED:
-        player.sendMessage("Shooting session finished!: Your score is " + session.currentScoresMessage());
-        session.killArrows(owner.getServer());
-        sessions.remove(player.getUniqueId());
+        this.finishSession(player, session);
         return;
     }
     if (hitTarget == -1) {
@@ -144,9 +148,7 @@ public class BowShooting implements Listener {
           player.sendMessage(ChatColor.GRAY + "Hit! Current score: " + session.currentScoresMessage());
           break;
         case SESSION_FINISHED:
-          player.sendMessage("Shooting session finished!: Your score is " + session.currentScoresMessage());
-          session.killArrows(owner.getServer());
-          sessions.remove(player.getUniqueId());
+          this.finishSession(player, session);
           break;
       }
     }, 1);
