@@ -14,6 +14,9 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.projectiles.ProjectileSource;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Score;
+import org.bukkit.scoreboard.Scoreboard;
 
 import java.util.HashMap;
 import java.util.Optional;
@@ -22,9 +25,13 @@ import java.util.UUID;
 public class BowShooting implements Listener {
   final HashMap<UUID, PlayerShootingSession> sessions = new HashMap<>();
   final JavaPlugin owner;
+  ScoreboardVisibility scoreboardVisibility;
+
+  public static final String scoreboardName = "bow_shooting";
 
   BowShooting(JavaPlugin owner) {
     this.owner = owner;
+    this.scoreboardVisibility = new ScoreboardVisibility(owner, scoreboardName);
   }
 
   @EventHandler
@@ -39,6 +46,7 @@ public class BowShooting implements Listener {
     if (!(shooterEntity instanceof Player)) {
       return;
     }
+    this.scoreboardVisibility.makeVisible();
     Player shooter = (Player) shooterEntity;
     Location location = shooter.getLocation();
     PlayerShootingSession session = null;
@@ -62,9 +70,23 @@ public class BowShooting implements Listener {
   }
 
   void finishSession(Player player, PlayerShootingSession session) {
+    int resultScore = session.totalScore();
     player.sendMessage("Shooting session finished!: Your score is " + session.currentScoresMessage());
     session.killArrows(owner.getServer());
     sessions.remove(player.getUniqueId());
+
+    Scoreboard scoreboard = player.getScoreboard();
+    Objective bowShooting = scoreboard.getObjective(scoreboardName);
+    if (bowShooting == null) {
+      scoreboard.registerNewObjective(scoreboardName, "dummy", "Bow shooting scores");
+      bowShooting = scoreboard.getObjective(scoreboardName);
+    }
+    String name = player.getName();
+    Score score = bowShooting.getScore(name);
+    if (score.getScore() == 0 || score.getScore() < resultScore) {
+      player.sendMessage(ChatColor.AQUA + "Congratulation! Your new record!");
+      score.setScore(resultScore);
+    }
   }
 
   void cancelSession(Player player, PlayerShootingSession.CancelReason reason) {

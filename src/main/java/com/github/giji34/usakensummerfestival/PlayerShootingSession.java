@@ -135,6 +135,18 @@ public class PlayerShootingSession {
     return this.arrows.contains(arrow.getUniqueId());
   }
 
+  int totalScore() {
+    int ret = 0;
+    for (int i = 0; i < this.scores.size(); i++) {
+      int s = this.scores.get(i).score;
+      if (s < 0) {
+        continue;
+      }
+      ret += s;
+    }
+    return ret;
+  }
+
   String currentScoresMessage() {
     String s = "";
     int score = 0;
