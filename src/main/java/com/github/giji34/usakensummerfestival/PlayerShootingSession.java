@@ -80,7 +80,11 @@ public class PlayerShootingSession {
     }
     Hit hit = new Hit(arrowUuid, targetIndex);
     this.scores.add(hit);
-    return HitResult.OK;
+    if (this.scores.size() == 5 && targetIndex < 0) {
+      return HitResult.SESSION_FINISHED;
+    } else {
+      return HitResult.OK;
+    }
   }
 
   enum ScoreResult {
