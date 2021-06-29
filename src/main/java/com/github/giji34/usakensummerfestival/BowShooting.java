@@ -40,7 +40,7 @@ public class BowShooting implements Listener {
     if (!(entity instanceof Arrow)) {
       return;
     }
-    Arrow arrow = (Arrow) entity;
+    final Arrow arrow = (Arrow) entity;
 
     LivingEntity shooterEntity = e.getEntity();
     if (!(shooterEntity instanceof Player)) {
@@ -60,7 +60,7 @@ public class BowShooting implements Listener {
       session = new PlayerShootingSession(shooter);
       sessions.put(shooter.getUniqueId(), session);
     } else if (!session.isInShootingRange(location)) {
-      arrow.remove();
+      owner.getServer().getScheduler().runTaskLater(owner, arrow::remove, 20);
       this.cancelSession(shooter, PlayerShootingSession.CancelReason.SHOOT_FROM_OUTSIDE_OF_THE_SHOOTING_RANGE);
       return;
     }
