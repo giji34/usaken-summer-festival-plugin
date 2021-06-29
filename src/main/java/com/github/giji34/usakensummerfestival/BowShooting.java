@@ -65,7 +65,7 @@ public class BowShooting implements Listener {
       return;
     }
     if (session.shoot(arrow.getUniqueId()) == 2) {
-      shooter.sendMessage(ChatColor.YELLOW + "Change your shooting position. 3rd ~ 5th shoot must be done behind the white line");
+      shooter.sendMessage(ChatColor.YELLOW + "Change your shooting position. 3rd ~ 5th shot must be done behind the white line");
     }
   }
 
