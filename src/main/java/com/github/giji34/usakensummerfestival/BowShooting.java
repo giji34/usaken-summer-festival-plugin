@@ -208,6 +208,10 @@ public class BowShooting implements Listener {
   }
 
   private static int TargetIndex(Block block) {
+    if (block == null) {
+      // hit to entity, not block
+      return -1;
+    }
     if (block.getBlockData().getMaterial() != Material.TARGET) {
       return -1;
     }
