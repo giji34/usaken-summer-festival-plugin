@@ -89,7 +89,7 @@ public class PlayerShootingSession {
   }
 
   ScoreResult score(int targetIndex, int score) {
-    assert(targetIndex < 0);
+    assert targetIndex >= 0;
     for (int i = 0; i < this.scores.size(); i++) {
       Hit hit = this.scores.get(i);
       if (hit.targetIndex != targetIndex) {
