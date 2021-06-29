@@ -167,7 +167,11 @@ public class PlayerShootingSession {
       }
     }
     if (this.scores.size() > 0) {
-      return s + " = " + score + " points";
+      if (this.scores.size() == 1) {
+        return score + " points";
+      } else {
+        return s + " = " + score + " points";
+      }
     } else {
       return s + " points";
     }
