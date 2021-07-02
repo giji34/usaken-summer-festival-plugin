@@ -46,7 +46,6 @@ public class BowShooting implements Listener {
     if (!(shooterEntity instanceof Player)) {
       return;
     }
-    this.scoreboardVisibility.makeVisible();
     Player shooter = (Player) shooterEntity;
     Location location = shooter.getLocation();
     PlayerShootingSession session = null;
@@ -64,6 +63,7 @@ public class BowShooting implements Listener {
       this.cancelSession(shooter, PlayerShootingSession.CancelReason.SHOOT_FROM_OUTSIDE_OF_THE_SHOOTING_RANGE);
       return;
     }
+    this.scoreboardVisibility.makeVisible();
     if (session.shoot(arrow.getUniqueId()) == 2) {
       shooter.sendMessage(ChatColor.YELLOW + "Change your shooting position. 3rd ~ 5th shot must be done behind the white line");
     }
