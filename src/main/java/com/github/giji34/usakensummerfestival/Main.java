@@ -7,6 +7,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class Main extends JavaPlugin implements Listener {
   private BoatRace boatRace;
   private BowShooting bowShooting;
+  private HauntedHouse hauntedHouse;
 
   public Main() {
   }
@@ -15,8 +16,10 @@ public class Main extends JavaPlugin implements Listener {
   public void onEnable() {
     this.boatRace = new BoatRace(this);
     this.bowShooting = new BowShooting(this);
+    this.hauntedHouse = new HauntedHouse(this);
     PluginManager pluginManager = getServer().getPluginManager();
     pluginManager.registerEvents(boatRace, this);
     pluginManager.registerEvents(bowShooting, this);
+    pluginManager.registerEvents(hauntedHouse, this);
   }
 }
