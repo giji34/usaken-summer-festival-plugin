@@ -55,6 +55,10 @@ public class HauntedHouse implements Listener {
         sessions.remove(player.getUniqueId());
         session.close(player);
       }
+    } else if (138 <= x && x < 142 && 46 <= y && y < 47 && 34 <= z && z < 35) {
+      if (!isTrappedChestPowered()) {
+        resetTrappedChest(world);
+      }
     }
   }
 
@@ -83,22 +87,15 @@ public class HauntedHouse implements Listener {
       return;
     }
     boolean powered = ((Powerable) data).isPowered();
-    boolean prev = leftComparatorPowered || rightComparatorPowered;
     if (z == 32) {
       leftComparatorPowered = powered;
     } else {
       rightComparatorPowered = powered;
     }
-    boolean next = leftComparatorPowered || rightComparatorPowered;
-    if (prev == next) {
-      return;
-    }
-    if (next) {
-      return;
-    }
-    owner.getServer().getScheduler().runTaskLater(owner, () -> {
-      resetTrappedChest(world);
-    }, 20);
+  }
+
+  private boolean isTrappedChestPowered() {
+    return leftComparatorPowered || rightComparatorPowered;
   }
 
   private void resetTrappedChest(World world) {
@@ -106,15 +103,14 @@ public class HauntedHouse implements Listener {
     Block right = world.getBlockAt(148, 46, 33);
     BlockState leftBlockState = left.getState();
     BlockState rightBlockState = right.getState();
-    if (!(leftBlockState instanceof InventoryHolder)) {
-      return;
-    }
     if (!(rightBlockState instanceof InventoryHolder)) {
       return;
     }
-    ((InventoryHolder) leftBlockState).getInventory().clear();
-    Inventory inventory = ((InventoryHolder) rightBlockState).getInventory();
+    if (!(leftBlockState instanceof InventoryHolder)) {
+      return;
+    }
+    Inventory inventory = ((InventoryHolder) leftBlockState).getInventory();
     inventory.clear();
-    inventory.setItem(4, new ItemStack(Material.GRAY_CANDLE));
+    inventory.setItem(31, new ItemStack(Material.GRAY_CANDLE));
   }
 }
