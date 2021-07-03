@@ -6,6 +6,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Openable;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -56,9 +57,7 @@ public class HauntedHouse implements Listener {
         session.close(player);
       }
     } else if (138 <= x && x < 142 && 46 <= y && y < 47 && 34 <= z && z < 35) {
-      if (!isTrappedChestPowered()) {
-        resetTrappedChest(world);
-      }
+      onPlayerPassedEntranceCorridorOfTrappedRoom(world);
     }
   }
 
@@ -98,7 +97,15 @@ public class HauntedHouse implements Listener {
     return leftComparatorPowered || rightComparatorPowered;
   }
 
+  private void onPlayerPassedEntranceCorridorOfTrappedRoom(World world) {
+    resetTrappedChest(world);
+    ensureFenceGatesOpened(world);
+  }
+
   private void resetTrappedChest(World world) {
+    if (isTrappedChestPowered()) {
+      return;
+    }
     Block left = world.getBlockAt(148, 46, 32);
     Block right = world.getBlockAt(148, 46, 33);
     BlockState leftBlockState = left.getState();
@@ -112,5 +119,24 @@ public class HauntedHouse implements Listener {
     Inventory inventory = ((InventoryHolder) leftBlockState).getInventory();
     inventory.clear();
     inventory.setItem(31, new ItemStack(Material.GRAY_CANDLE));
+  }
+
+  private void ensureFenceGatesOpened(World world) {
+    openOpenable(world, 144, 42, 33);
+    openOpenable(world, 144, 41, 33);
+  }
+
+  private void openOpenable(World world, int x, int y, int z) {
+    Block block = world.getBlockAt(x, y, z);
+    BlockData data = block.getBlockData();
+    if (!(data instanceof Openable)) {
+      return;
+    }
+    Openable openable = (Openable) data;
+    if (openable.isOpen()) {
+      return;
+    }
+    openable.setOpen(true);
+    block.setBlockData(data, true);
   }
 }
