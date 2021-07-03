@@ -1,19 +1,20 @@
 package com.github.giji34.usakensummerfestival;
 
 import org.bukkit.Location;
-import org.bukkit.Server;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Powerable;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
@@ -112,9 +113,8 @@ public class HauntedHouse implements Listener {
       return;
     }
     ((InventoryHolder) leftBlockState).getInventory().clear();
-    ((InventoryHolder) rightBlockState).getInventory().clear();
-    Server server = owner.getServer();
-    CommandSender sender = server.getConsoleSender();
-    server.dispatchCommand(sender, "item replace block 148 46 33 container.4 with gray_candle");
+    Inventory inventory = ((InventoryHolder) rightBlockState).getInventory();
+    inventory.clear();
+    inventory.setItem(4, new ItemStack(Material.GRAY_CANDLE));
   }
 }
