@@ -7,11 +7,13 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
+
+import java.util.HashMap;
+import java.util.UUID;
 
 public class HauntedHouse implements Listener {
   final JavaPlugin owner;
+  final HashMap<UUID, PlayerHauntedHouseSession> sessions = new HashMap<>();
 
   HauntedHouse(JavaPlugin owner) {
     this.owner = owner;
@@ -32,28 +34,19 @@ public class HauntedHouse implements Listener {
     double y = location.getY();
     double z = location.getZ();
     if (104 <= x && x < 115 && 67 <= y && y < 69 && 20 <= z && z < 23) {
-      onPlayerPassingEntranceCorridor(player);
+      if (!sessions.containsKey(player.getUniqueId())) {
+        PlayerHauntedHouseSession session = new PlayerHauntedHouseSession(player);
+        sessions.put(player.getUniqueId(), session);
+      }
     } else if (95 <= x && x < 103 && 67 <= y && y < 69 && 25 <= z && z < 28) {
-      onPlayerPassingExitCorridor(player);
+      if (sessions.containsKey(player.getUniqueId())) {
+        PlayerHauntedHouseSession session = sessions.get(player.getUniqueId());
+        sessions.remove(player.getUniqueId());
+        session.close(player);
+      }
+    } else if (sessions.containsKey(player.getUniqueId())) {
+      PlayerHauntedHouseSession session = sessions.get(player.getUniqueId());
+      session.onMove(player);
     }
-  }
-
-  void onPlayerPassingEntranceCorridor(Player player) {
-    if (!player.hasPotionEffect(PotionEffectType.NIGHT_VISION)) {
-      return;
-    }
-    player.removePotionEffect(PotionEffectType.NIGHT_VISION);
-  }
-
-  void onPlayerPassingExitCorridor(Player player) {
-    if (player.hasPotionEffect(PotionEffectType.NIGHT_VISION)) {
-      return;
-    }
-    int duration = 7 * 24 * 60 * 60 * 20;
-    int amplifier = 0;
-    boolean ambient = false;
-    boolean particles = false;
-    PotionEffect nightVision = new PotionEffect(PotionEffectType.NIGHT_VISION, duration, amplifier, ambient, particles);
-    player.addPotionEffect(nightVision);
   }
 }
