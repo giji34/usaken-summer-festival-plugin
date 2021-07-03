@@ -17,8 +17,4 @@ public class PlayerHauntedHouseSession {
     PotionEffect nightVision = new PotionEffect(PotionEffectType.NIGHT_VISION, duration, amplifier, ambient, particles);
     player.addPotionEffect(nightVision);
   }
-
-  void onMove(Player player) {
-
-  }
 }
