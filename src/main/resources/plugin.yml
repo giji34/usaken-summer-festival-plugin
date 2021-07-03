@@ -1,4 +1,4 @@
 name: usaken-summer-festival
-api-version: 1.13
-version: 2.0.3
+api-version: 1.17
+version: 3.0.0
 main: com.github.giji34.usakensummerfestival.Main
