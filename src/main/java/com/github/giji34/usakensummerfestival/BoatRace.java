@@ -20,6 +20,14 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 class BoatRace implements Listener {
+
+  enum CancelReason {
+    CHANGED_VEHICLE,
+    EXITED_BOAT,
+    QUIT,
+    COURSE_OUT,
+  }
+
   final HashMap<UUID, PlayerBoatRaceRun> boatRaceRuns = new HashMap<>();
   final Logger logger;
   final ScoreboardVisibility scoreboardVisibility;
@@ -45,7 +53,7 @@ class BoatRace implements Listener {
       if (run.vehicleUUid.equals(vehicleUUid)) {
         return;
       }
-      this.cancelBoatRaceRun(enteredPlayer, BoatRaceCancelReason.CHANGED_VEHICLE);
+      this.cancelBoatRaceRun(enteredPlayer, CancelReason.CHANGED_VEHICLE);
       return;
     }
     Location location = enteredPlayer.getLocation();
@@ -76,7 +84,7 @@ class BoatRace implements Listener {
 
     double y = tl.location.getY();
     if (y != 67 && y < 68) {
-      cancelBoatRaceRun(player, BoatRaceCancelReason.COURSE_OUT);
+      cancelBoatRaceRun(player, CancelReason.COURSE_OUT);
       return;
     }
 
@@ -86,7 +94,7 @@ class BoatRace implements Listener {
         player.sendMessage(ChatColor.GRAY + "Started!");
         break;
       case COURSE_OUT:
-        this.cancelBoatRaceRun(player, BoatRaceCancelReason.COURSE_OUT);
+        this.cancelBoatRaceRun(player, CancelReason.COURSE_OUT);
         break;
       case GOALED:
         int recordMillis = (int)(run.goalTimeMillis - run.startTimeMillis);
@@ -119,7 +127,7 @@ class BoatRace implements Listener {
     if (!boatRaceRuns.containsKey(exitedPlayer.getUniqueId())) {
       return;
     }
-    cancelBoatRaceRun(exitedPlayer, BoatRaceCancelReason.EXITED_BOAT);
+    cancelBoatRaceRun(exitedPlayer, CancelReason.EXITED_BOAT);
   }
 
   @EventHandler
@@ -128,10 +136,10 @@ class BoatRace implements Listener {
     if (!boatRaceRuns.containsKey(player.getUniqueId())) {
       return;
     }
-    cancelBoatRaceRun(player, BoatRaceCancelReason.QUIT);
+    cancelBoatRaceRun(player, CancelReason.QUIT);
   }
 
-  private void cancelBoatRaceRun(Player player, BoatRaceCancelReason reason) {
+  private void cancelBoatRaceRun(Player player, CancelReason reason) {
     this.boatRaceRuns.remove(player.getUniqueId());
     String message = null;
     switch (reason) {
