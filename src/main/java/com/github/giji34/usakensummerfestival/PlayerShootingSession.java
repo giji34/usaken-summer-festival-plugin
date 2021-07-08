@@ -3,57 +3,58 @@ package com.github.giji34.usakensummerfestival;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
-import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.UUID;
 
-public class PlayerShootingSession {
-  final Player player;
+class PlayerShootingSession {
+  class Arrow {
+    final UUID uuid;
+    Optional<Integer> hitTarget = Optional.empty();
+    int score = 0;
+
+    Arrow(UUID uuid) {
+      this.uuid = uuid;
+    }
+  }
 
   enum CancelReason {
     SHOOT_FROM_OUTSIDE_OF_THE_SHOOTING_RANGE,
+    SHOOT_BEFORE_HIT,
     HIT_ONE_TARGET_MULTIPLE_TIMES,
     TARGET_ALREADY_POWERED,
   }
 
-  class Hit {
-    // [-1, 4]
-    // -1: miss
-    // 0: most north target block
-    final int targetIndex;
-    // [-1, 15]
-    // -1: arrow does not hit yet
-    int score = -1;
-    final UUID arrowUuid;
+  final ArrayList<Arrow> arrows = new ArrayList<>();
 
-    Hit(UUID arrowUuid, int targetIndex) {
-      this.arrowUuid = arrowUuid;
-      this.targetIndex = targetIndex;
-      if (targetIndex < 0) {
-        this.score = 0;
+  PlayerShootingSession() {
+  }
+
+  enum ShootResult {
+    OK,
+    SHOOT_FROM_OUTSIDE_OF_THE_SHOOTING_RANGE,
+    SHOOT_BEFORE_HIT,
+  }
+
+  ShootResult shoot(UUID uuid, Location location) {
+    if (arrows.size() >= 30) {
+      return ShootResult.OK;
+    }
+    if (!IsValidShootingRange(location)) {
+      return ShootResult.SHOOT_FROM_OUTSIDE_OF_THE_SHOOTING_RANGE;
+    }
+    for (int i = 0; i < arrows.size(); i++) {
+      Arrow arrow = arrows.get(i);
+      if (!arrow.hitTarget.isPresent()) {
+        return ShootResult.SHOOT_BEFORE_HIT;
       }
     }
-  }
-
-  PlayerShootingSession(Player player) {
-    this.player = player;
-  }
-
-  private ArrayList<Hit> scores = new ArrayList<>();
-  private HashSet<UUID> arrows = new HashSet<>();
-
-  boolean isInShootingRange(Location location) {
-    if (arrows.size() <= 1) {
-      return IsValidShootingRangeFirst(location);
-    } else if (arrows.size() <= 4) {
-      return IsValidShootingRangeSecond(location);
-    } else {
-      return false;
-    }
+    Arrow arrow = new Arrow(uuid);
+    this.arrows.add(arrow);
+    return ShootResult.OK;
   }
 
   enum HitResult {
@@ -62,28 +63,54 @@ public class PlayerShootingSession {
     SESSION_FINISHED,
   }
 
-  HitResult hit(int targetIndex, UUID arrowUuid) {
-    if (!this.arrows.contains(arrowUuid)) {
-      // just ignore
-      return HitResult.OK;
-    }
-
-    if (targetIndex > -1) {
-      for (int i = 0; i < this.scores.size(); i++) {
-        if (this.scores.get(i).targetIndex == targetIndex) {
-          return HitResult.TARGET_ALREADY_USED;
-        }
+  HitResult hit(int targetIndex, UUID arrowUuid, Server server) {
+    int idx = -1;
+    for (int i = 0; i < arrows.size(); i++) {
+      Arrow arrow = arrows.get(i);
+      if (arrow.uuid.equals(arrowUuid)) {
+        idx = i;
+        break;
       }
     }
-    if (this.scores.size() >= 5) {
-      return HitResult.SESSION_FINISHED;
-    }
-    Hit hit = new Hit(arrowUuid, targetIndex);
-    this.scores.add(hit);
-    if (this.scores.size() == 5 && targetIndex < 0) {
-      return HitResult.SESSION_FINISHED;
-    } else {
+    if (idx < 0) {
       return HitResult.OK;
+    }
+    Arrow arrow = arrows.get(idx);
+    arrow.hitTarget = Optional.of(targetIndex);
+
+    boolean[] usedTarget = new boolean[]{false, false, false, false, false};
+    Arrays.fill(usedTarget, false);
+    int end = idx / 5;
+    for (int i = 0; i < 5; i++) {
+      int j = 5 * end + i;
+      if (j >= arrows.size()) {
+        break;
+      }
+      Optional<Integer> hit = arrows.get(j).hitTarget;
+      if (!hit.isPresent()) {
+        continue;
+      }
+      int hitIndex = hit.get();
+      if (hitIndex < 0) {
+        continue;
+      }
+      if (usedTarget[hitIndex]) {
+        return HitResult.TARGET_ALREADY_USED;
+      }
+      usedTarget[hitIndex] = true;
+    }
+    if (arrows.size() < 30) {
+      if (targetIndex < 0 && this.arrows.size() % 5 == 0) {
+        killArrows(server, false);
+      }
+      return HitResult.OK;
+    } else {
+      for (int i = 0; i < arrows.size(); i++) {
+        if (!arrows.get(i).hitTarget.isPresent()) {
+          return HitResult.OK;
+        }
+      }
+      return HitResult.SESSION_FINISHED;
     }
   }
 
@@ -92,24 +119,29 @@ public class PlayerShootingSession {
     SESSION_FINISHED,
   }
 
-  ScoreResult score(int targetIndex, int score) {
-    assert targetIndex >= 0;
-    for (int i = 0; i < this.scores.size(); i++) {
-      Hit hit = this.scores.get(i);
-      if (hit.targetIndex != targetIndex) {
+  ScoreResult score(int targetIndex, int score, Server server) {
+    for (int i = 0; i < arrows.size(); i++) {
+      Arrow arrow = arrows.get(i);
+      if (!arrow.hitTarget.isPresent()) {
         continue;
       }
-      if (hit.score < 0) {
-        hit.score = score;
+      if (arrow.hitTarget.get() != targetIndex) {
+        continue;
       }
+      if (arrow.score > 0) {
+        continue;
+      }
+      arrow.score = score;
       break;
     }
-    if (this.scores.size() < 5) {
+    if (this.arrows.size() % 5 == 0) {
+      killArrows(server, false);
+    }
+    if (this.arrows.size() < 30) {
       return ScoreResult.WAITING_NEXT;
     } else {
-      for (int i = 0; i < this.scores.size(); i++) {
-        if (this.scores.get(i).score < 0) {
-          // some arrows still flying
+      for (int i = 0; i < arrows.size(); i++) {
+        if (!arrows.get(i).hitTarget.isPresent()) {
           return ScoreResult.WAITING_NEXT;
         }
       }
@@ -117,9 +149,12 @@ public class PlayerShootingSession {
     }
   }
 
-  void killArrows(Server server) {
-    for (UUID arrowUuid : this.arrows) {
-      Entity entity = server.getEntity(arrowUuid);
+  void killArrows(Server server, boolean killFlyingArrows) {
+    for (Arrow arrow : this.arrows) {
+      if (!killFlyingArrows && !arrow.hitTarget.isPresent()) {
+        continue;
+      }
+      Entity entity = server.getEntity(arrow.uuid);
       if (entity == null) {
         continue;
       }
@@ -127,80 +162,32 @@ public class PlayerShootingSession {
     }
   }
 
-  int shoot(UUID arrowUuid) {
-    if (this.arrows.size() >= 5) {
-      return this.arrows.size();
-    }
-    this.arrows.add(arrowUuid);
-    return this.arrows.size();
-  }
-
-  boolean isValidArrow(Arrow arrow) {
-    return this.arrows.contains(arrow.getUniqueId());
-  }
-
   int totalScore() {
     int ret = 0;
-    for (int i = 0; i < this.scores.size(); i++) {
-      int s = this.scores.get(i).score;
-      if (s < 0) {
-        continue;
-      }
-      ret += s;
+    for (Arrow arrow : arrows) {
+      ret += arrow.score;
     }
     return ret;
   }
 
+  boolean isValidArrow(org.bukkit.entity.Arrow a) {
+    for (Arrow arrow : arrows) {
+      if (arrow.uuid.equals(a.getUniqueId())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   String currentScoresMessage() {
-    String s = "";
-    int score = 0;
-    for (int i = 0; i < this.scores.size(); i++) {
-      if (i > 0) {
-        s += " + ";
-      }
-      Hit hit = this.scores.get(i);
-      if (hit.score < 0) {
-        s += "?";
-      } else {
-        score += hit.score;
-        s += hit.score;
-      }
-    }
-    if (this.scores.size() > 0) {
-      if (this.scores.size() == 1) {
-        return score + " points";
-      } else {
-        return s + " = " + score + " points";
-      }
+    if (this.arrows.size() < 30) {
+      return this.arrows.size() + " / 30 shots, current score: " + totalScore() + " points";
     } else {
-      return s + " points";
+      return "Result: " + totalScore() + " points";
     }
   }
 
-  static boolean IsValidShootingRangeFirst(Location location) {
-    World world = location.getWorld();
-    if (world == null) {
-      return false;
-    }
-    if (world.getEnvironment() != World.Environment.NORMAL) {
-      return false;
-    }
-    double x = location.getX();
-    double y = location.getY();
-    double z = location.getZ();
-    if (x < 88.5 || 92.5 < x) {
-      return false;
-    }
-    if (y < 64 || 65.5 < y) {
-      return false;
-    }
-    if (z < 143 || 160 < z) {
-      return false;
-    }
-    return true;
-  }
-
-  static boolean IsValidShootingRangeSecond(Location location) {
+  static boolean IsValidShootingRange(Location location) {
     World world = location.getWorld();
     if (world == null) {
       return false;

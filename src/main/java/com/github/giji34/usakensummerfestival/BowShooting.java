@@ -1,9 +1,6 @@
 package com.github.giji34.usakensummerfestival;
 
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.*;
@@ -53,26 +50,31 @@ public class BowShooting implements Listener {
       session = sessions.get(shooter.getUniqueId());
     }
     if (session == null) {
-      if (!PlayerShootingSession.IsValidShootingRangeFirst(location)) {
+      if (!PlayerShootingSession.IsValidShootingRange(location)) {
         return;
       }
-      session = new PlayerShootingSession(shooter);
+      session = new PlayerShootingSession();
       sessions.put(shooter.getUniqueId(), session);
-    } else if (!session.isInShootingRange(location)) {
-      owner.getServer().getScheduler().runTaskLater(owner, arrow::remove, 20);
-      this.cancelSession(shooter, PlayerShootingSession.CancelReason.SHOOT_FROM_OUTSIDE_OF_THE_SHOOTING_RANGE);
-      return;
     }
-    this.scoreboardVisibility.makeVisible();
-    if (session.shoot(arrow.getUniqueId()) == 2) {
-      shooter.sendMessage(ChatColor.YELLOW + "Change your shooting position. 3rd ~ 5th shot must be done behind the white line");
+    switch (session.shoot(arrow.getUniqueId(), location)) {
+      case OK:
+        this.scoreboardVisibility.makeVisible();
+        break;
+      case SHOOT_FROM_OUTSIDE_OF_THE_SHOOTING_RANGE:
+        owner.getServer().getScheduler().runTaskLater(owner, arrow::remove, 20);
+        this.cancelSession(shooter, PlayerShootingSession.CancelReason.SHOOT_FROM_OUTSIDE_OF_THE_SHOOTING_RANGE);
+        break;
+      case SHOOT_BEFORE_HIT:
+        owner.getServer().getScheduler().runTaskLater(owner, arrow::remove, 20);
+        this.cancelSession(shooter, PlayerShootingSession.CancelReason.SHOOT_BEFORE_HIT);
+        break;
     }
   }
 
   void finishSession(Player player, PlayerShootingSession session) {
     int resultScore = session.totalScore();
-    player.sendMessage("Shooting session finished!: Your score is " + session.currentScoresMessage());
-    session.killArrows(owner.getServer());
+    player.sendMessage("Shooting session finished!: Your score is " + resultScore);
+    session.killArrows(owner.getServer(), true);
     sessions.remove(player.getUniqueId());
 
     Scoreboard scoreboard = player.getScoreboard();
@@ -92,15 +94,18 @@ public class BowShooting implements Listener {
   void cancelSession(Player player, PlayerShootingSession.CancelReason reason) {
     if (sessions.containsKey(player.getUniqueId())) {
       PlayerShootingSession session = sessions.get(player.getUniqueId());
-      session.killArrows(owner.getServer());
+      session.killArrows(owner.getServer(), true);
     }
     sessions.remove(player.getUniqueId());
     switch (reason) {
       case SHOOT_FROM_OUTSIDE_OF_THE_SHOOTING_RANGE:
-        player.sendMessage(ChatColor.RED + "Shooting session canceled: shoot from outside of the shooting ranges");
+        player.sendMessage(ChatColor.RED + "Shooting session canceled: shoot from outside of the shooting range");
         break;
       case HIT_ONE_TARGET_MULTIPLE_TIMES:
-        player.sendMessage(ChatColor.RED + "Shooting session canceled: shoot one target multiple times");
+        player.sendMessage(ChatColor.RED + "Shooting session canceled: shoot the target multiple times in your active end");
+        break;
+      case SHOOT_BEFORE_HIT:
+        player.sendMessage(ChatColor.RED + "Shooting session cancelled: shoot before last arrow hit a target");
         break;
     }
   }
@@ -136,7 +141,8 @@ public class BowShooting implements Listener {
         return;
       }
     }
-    switch (session.hit(hitTarget, arrow.getUniqueId())) {
+    Server server = owner.getServer();
+    switch (session.hit(hitTarget, arrow.getUniqueId(), server)) {
       case OK:
         break;
       case TARGET_ALREADY_USED:
@@ -147,14 +153,14 @@ public class BowShooting implements Listener {
         return;
     }
     if (hitTarget == -1) {
-      player.sendMessage(ChatColor.GRAY + "Miss! Current score: " + session.currentScoresMessage());
+      player.sendMessage(ChatColor.GRAY + "Miss! " + session.currentScoresMessage());
       return;
     }
     final World world = block.getWorld();
     int x = block.getX();
     int y = block.getY();
     int z = block.getZ();
-    owner.getServer().getScheduler().runTaskLater(owner, () -> {
+    server.getScheduler().runTaskLater(owner, () -> {
       Block b = world.getBlockAt(x, y, z);
       BlockData data = b.getBlockData();
       int score = 0;
@@ -165,9 +171,9 @@ public class BowShooting implements Listener {
         } catch (Exception ex) {
         }
       }
-      switch (session.score(hitTarget, score)) {
+      switch (session.score(hitTarget, score, server)) {
         case WAITING_NEXT:
-          player.sendMessage(ChatColor.GRAY + "Hit! Current score: " + session.currentScoresMessage());
+          player.sendMessage(ChatColor.GRAY + "Hit! " + session.currentScoresMessage());
           break;
         case SESSION_FINISHED:
           this.finishSession(player, session);
@@ -235,4 +241,3 @@ public class BowShooting implements Listener {
     return -1;
   }
 }
-
